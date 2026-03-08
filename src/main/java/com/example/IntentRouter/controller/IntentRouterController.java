@@ -6,6 +6,7 @@ import com.example.IntentRouter.model.UserRequest;
 import com.example.IntentRouter.service.AuditLogger;
 import com.example.IntentRouter.service.IntentRouterService;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,7 +28,7 @@ public class IntentRouterController {
     }
 
     @PostMapping("/route")
-    public ResponseEntity<Map<String, Object>> routeMessage(@RequestBody UserRequest request) {
+    public ResponseEntity<Map<String, Object>> routeMessage(@Valid @RequestBody UserRequest request) {
 
         // 1. Classify the Intent using the first LLM call
         IntentClassification classification = routerService.classifyIntent(request.prompt());

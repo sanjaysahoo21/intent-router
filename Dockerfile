@@ -19,11 +19,16 @@ FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
+# Run as non-root user to limit blast radius if container is compromised
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 # Copy the built JAR from the builder stage
 COPY --from=builder /app/target/*.jar app.jar
 
-# Create directory for log files
-RUN mkdir -p /app/logs
+# Create directory for log files and give ownership to the app user
+RUN mkdir -p /app/logs && chown -R appuser:appgroup /app
+
+USER appuser
 
 # Expose port
 EXPOSE 8080

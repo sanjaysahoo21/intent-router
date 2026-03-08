@@ -54,7 +54,8 @@ public class IntentRouterService {
             return objectMapper.readValue(cleaned, IntentClassification.class);
 
         } catch (Exception e) {
-            System.err.println("Classifier failed: " + e.getMessage());
+            // Log a generic message — avoid exposing internal exception details
+            System.err.println("Intent classification failed. Falling back to 'unclear'.");
             return new IntentClassification("unclear", 0.0);
         }
 
