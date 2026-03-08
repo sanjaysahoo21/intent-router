@@ -17,10 +17,12 @@ public class IntentRouterService {
 
     private final ChatClient chatClient;
     private final Map<String, String> systemPrompts;
+    private final ObjectMapper objectMapper;
 
     public IntentRouterService(ChatClient.Builder chatClientBuilder, ObjectMapper objectMapper,
             @Value("classpath:prompts.json") Resource promptsResource) throws IOException {
         this.chatClient = chatClientBuilder.build();
+        this.objectMapper = objectMapper;
         this.systemPrompts = objectMapper.readValue(promptsResource.getInputStream(),
                 new TypeReference<Map<String, String>>() {
                 });
@@ -30,18 +32,29 @@ public class IntentRouterService {
 
         String systemInstruction = """
                 Your task is to classify the user's intent.
-                Choose exactly ONE of the following distinct labels: code, data, writing, career, unclear.
+                Choose exactly ONE of the following labels: code, data, writing, career, unclear.
+                Respond with ONLY a JSON object containing two keys: "intent" (the label) and "confidence" (a float from 0.0 to 1.0).
+                Do not include any other text, explanation, or markdown formatting. Only output raw JSON.
+                Example: {"intent": "code", "confidence": 0.95}
                 """;
 
         try {
-
-            return chatClient.prompt()
+            String rawResponse = chatClient.prompt()
                     .system(systemInstruction)
                     .user(userMessage)
                     .call()
-                    .entity(IntentClassification.class);
+                    .content();
+
+            // Strip markdown code fences if the LLM wraps the JSON
+            String cleaned = rawResponse.trim();
+            if (cleaned.startsWith("```")) {
+                cleaned = cleaned.replaceAll("```json\\s*", "").replaceAll("```\\s*", "").trim();
+            }
+
+            return objectMapper.readValue(cleaned, IntentClassification.class);
 
         } catch (Exception e) {
+            System.err.println("Classifier failed: " + e.getMessage());
             return new IntentClassification("unclear", 0.0);
         }
 
