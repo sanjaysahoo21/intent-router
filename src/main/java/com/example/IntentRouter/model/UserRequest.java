@@ -7,5 +7,4 @@ public record UserRequest(
         @NotBlank(message = "Prompt must not be blank")
         @Size(max = 5000, message = "Prompt must not exceed 5000 characters")
         String prompt) {
-
 }
